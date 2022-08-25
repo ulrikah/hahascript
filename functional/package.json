@@ -1,0 +1,9 @@
+{
+  "name": "functional",
+  "devDependencies": {
+    "typescript": "4.7.4"
+  },
+  "dependencies": {
+    "fp-ts": "2.12.2"
+  }
+}
