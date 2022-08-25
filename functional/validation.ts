@@ -1,6 +1,7 @@
-import {chain, Either, left, right} from 'fp-ts/Either'
+import {chain, Either, getApplicativeValidation, left, map, mapLeft, right} from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function'
-
+import {getSemigroup, NonEmptyArray} from "fp-ts/NonEmptyArray";
+import {sequenceT} from "fp-ts/Apply";
 
 const minLength = (s: string): Either<string, string> =>
     s.length >= 6 ? right(s) : left('at least 6 characters')
@@ -11,11 +12,37 @@ const oneCapital = (s: string): Either<string, string> =>
 const oneNumber = (s: string): Either<string, string> =>
     /[0-9]/g.test(s) ? right(s) : left('at least one number')
 
-const validatePassword = (s: string): Either<string, string> =>
+const validatePasswordWithEither = (s: string): Either<string, string> =>
     pipe(
         minLength(s),
         chain(oneCapital),
         chain(oneNumber)
     )
 
-console.log(validatePassword("asdasdAsd5"))
+console.log(validatePasswordWithEither("asd"))
+
+// Constructing a validator from a sequence of Either-returning functions
+function lift<E, A>(check: (a: A) => Either<E, A>): (a: A) => Either<NonEmptyArray<E>, A> {
+    return a => pipe(
+        check(a),
+        mapLeft(a => [a])
+    )
+}
+
+const minLengthValidator = lift(minLength)
+const oneCapitalValidator = lift(oneCapital)
+const oneNumberValidator = lift(oneNumber)
+
+
+const validatePasswordValidator = (s: string): Either<NonEmptyArray<string>, string> =>
+    pipe(
+        sequenceT(getApplicativeValidation(getSemigroup<typeof s>()))(
+            minLengthValidator(s),
+            oneCapitalValidator(s),
+            oneNumberValidator(s)
+        ),
+        map(() => s)
+    )
+
+console.log(validatePasswordValidator("asd"))
+
