@@ -2,7 +2,6 @@ import {chain, Either, getApplicativeValidation, left, map, mapLeft, right} from
 import { pipe } from 'fp-ts/function'
 import {getSemigroup, NonEmptyArray} from "fp-ts/NonEmptyArray";
 import {sequenceT} from "fp-ts/Apply";
-import {Semigroup} from "fp-ts/Semigroup";
 
 const minLength = (s: string): Either<string, string> =>
     s.length >= 6 ? right(s) : left('at least 6 characters')
@@ -35,15 +34,9 @@ const oneCapitalValidator = lift(oneCapital)
 const oneNumberValidator = lift(oneNumber)
 
 
-function semigroupArray<A>(): Semigroup<NonEmptyArray<A>> {
-    return {
-        concat: (x, y) => x.concat(y) as NonEmptyArray<A>
-    }
-}
-
 const validatePasswordValidator = (s: string): Either<NonEmptyArray<string>, string> =>
     pipe(
-        sequenceT(getApplicativeValidation(semigroupArray<string>()))(
+        sequenceT(getApplicativeValidation(getSemigroup<typeof s>()))(
             minLengthValidator(s),
             oneCapitalValidator(s),
             oneNumberValidator(s)
